@@ -24,7 +24,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: 'npm'
 
       - name: Install dependencies & Build Webpack
@@ -41,6 +41,6 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           # 1. 若專案尚未建立，自動建立 Cloudflare Pages 專案（若已存在則忽略）
-          npx wrangler pages project create ${{ env.PROJECT_NAME }} --production-branch=main || true
+          npx --yes wrangler pages project create ${{ env.PROJECT_NAME }} --production-branch=main || true
           # 2. 自動發布 Staging 暫存預覽環境
-          npx wrangler pages deploy dist --project-name=${{ env.PROJECT_NAME }} --branch=${{ github.head_ref }} --commit-dirty=true
+          npx --yes wrangler pages deploy dist --project-name=${{ env.PROJECT_NAME }} --branch=${{ github.head_ref }} --commit-dirty=true
