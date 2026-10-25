@@ -51,4 +51,4 @@ jobs:
       - name: Workflow Status Summary
         run: |
           echo "### 🎉 Production 正式環境發布完成" >> $GITHUB_STEP_SUMMARY
-          echo "- **正式上線網址**: ${{ steps.deploy.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **正式上線網址**: [https://${{ env.PROJECT_NAME }}.pages.dev](https://${{ env.PROJECT_NAME }}.pages.dev)" >> $GITHUB_STEP_SUMMARY
