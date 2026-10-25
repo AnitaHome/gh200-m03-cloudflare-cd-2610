@@ -1,0 +1,59 @@
+name: Deploy to Staging (Cloudflare Pages)
+
+on:
+  pull_request:
+    types: [labeled, synchronize]
+
+env:
+  PROJECT_NAME: gh200-tictactoe-app
+
+jobs:
+  build-and-stage:
+    # 核心條件式：僅當 PR 帶有 'stage' 標籤時才觸發（GH-200 必考重點）
+    if: contains(github.event.pull_request.labels.*.name, 'stage')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # 授權 Action 在 PR 留言回報預覽網址
+      deployments: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install dependencies & Build Webpack
+        run: |
+          npm ci
+          npm run build
+          mkdir -p dist
+          cp index.html dist/
+          cp -r public dist/
+
+      - name: Deploy Staging Preview to Cloudflare Pages
+        id: deploy
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: ${{ env.PROJECT_NAME }}
+          directory: dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment Preview URL on Pull Request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const previewUrl = '${{ steps.deploy.outputs.url }}';
+            const commentBody = `### 🚀 Staging 預覽環境部署成功！\n\n- **預覽網址 (Preview URL)**: [${previewUrl}](${previewUrl})\n- **觸發分支**: \`${context.payload.pull_request.head.ref}\`\n- **最新提交**: \`${context.sha.substring(0, 7)}\`\n\n> 此為 GitHub Actions 依據 \`stage\` 標籤自動建置之獨立暫存預覽環境。`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody
+            });
