@@ -2,44 +2,34 @@ name: Learning GitHub Script
 
 on:
   issues:
-    types: [opened, labeled]
+    types: [opened]
 
 permissions:
   issues: write
+  contents: read
 
 jobs:
-  triage:
+  comment:
     runs-on: ubuntu-latest
     steps:
-      - name: 發送通用歡迎回覆
-        if: github.event.action == 'opened'
+      - name: 檢出儲存庫代碼 (讀取範本所需)
+        uses: actions/checkout@v4
+
+      - name: 讀取 Markdown 範本並自動回覆
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: "🎉 感謝您提交議題！請確認您已提供足夠的重現步驟或日誌資訊。"
-            });
+            const fs = require('fs');
+            const path = '.github/ISSUE_RESPONSES/comment.md';
 
-      - name: 偵測 Bug 標籤並標註高優先級
-        if: contains(github.event.issue.labels.*.name, 'bug')
-        uses: actions/github-script@v7
-        with:
-          script: |
-            // 自動為含有 bug 標籤的 Issue 追加 priority: high 標籤
-            await github.rest.issues.addLabels({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: ['priority: high']
-            });
-
-            // 於 Issue 內留下引導說明
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: "⚠️ **偵測到 Bug 回報**：已自動標記為 `priority: high`，請確保提供系統環境與最小重現代碼。"
-            });
+            if (fs.existsSync(path)) {
+              const issueBody = fs.readFileSync(path, 'utf8');
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: issueBody
+              });
+            } else {
+              core.setFailed(`找不到範本檔案：${path}`);
+            }
