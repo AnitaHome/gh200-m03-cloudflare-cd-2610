@@ -17,7 +17,7 @@ jobs:
 
       - name: 讀取 Markdown 範本並自動回覆
         if: github.event.action == 'opened'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
@@ -37,7 +37,7 @@ jobs:
 
       - name: 偵測 Bug 標籤並標註高優先級
         if: contains(github.event.issue.labels.*.name, 'bug')
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             // 自動為含有 bug 標籤的 Issue 追加 priority: high 標籤
